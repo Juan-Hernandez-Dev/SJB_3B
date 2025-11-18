@@ -11,12 +11,15 @@ let state = {
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("Script loaded successfully!");
   log("System initialized. Configure memory to begin.", "info");
 });
 
 // Configure Memory
 function configureMemory() {
+  console.log("configureMemory called");
   const size = parseInt(document.getElementById("memorySize").value);
+  console.log("Memory size:", size);
 
   if (size < 4 || size > 32) {
     showStatus(

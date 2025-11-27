@@ -11,15 +11,12 @@ let state = {
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Script loaded successfully!");
   log("System initialized. Configure memory to begin.", "info");
 });
 
 // Configure Memory
 function configureMemory() {
-  console.log("configureMemory called");
   const size = parseInt(document.getElementById("memorySize").value);
-  console.log("Memory size:", size);
 
   if (size < 4 || size > 32) {
     showStatus(
@@ -34,13 +31,8 @@ function configureMemory() {
   state.memoryConfigured = true;
   state.frames = [];
 
-  // Initialize frames
   for (let i = 0; i < size; i++) {
-    state.frames.push({
-      frameId: i,
-      occupied: false,
-      processId: null,
-    });
+    state.frames.push({ frameId: i, occupied: false, processId: null });
   }
 
   showStatus(
@@ -63,13 +55,11 @@ function addProcess() {
   const size = parseInt(document.getElementById("processSize").value);
   const burstTime = parseInt(document.getElementById("burstTime").value);
 
-  // Auto-generate ID if empty
   if (!id) {
     id = `P${state.processCounter}`;
     state.processCounter++;
   }
 
-  // Validation
   if (state.processes.find((p) => p.id === id)) {
     alert("Process ID must be unique!");
     return;
@@ -85,19 +75,10 @@ function addProcess() {
     return;
   }
 
-  // Add process
-  const process = {
-    id,
-    size,
-    burstTime,
-    state: "waiting",
-  };
-
-  state.processes.push(process);
+  state.processes.push({ id, size, burstTime, state: "waiting" });
   log(`Process ${id} added (Size: ${size}, Burst: ${burstTime})`, "success");
   renderProcessQueue();
 
-  // Clear inputs
   document.getElementById("processId").value = "";
   document.getElementById("processSize").value = "4";
   document.getElementById("burstTime").value = "5";
@@ -115,21 +96,17 @@ async function runSimulation() {
     return;
   }
 
-  if (state.isSimulating) {
-    return;
-  }
+  if (state.isSimulating) return;
 
   state.isSimulating = true;
   log("=== Simulation Started ===", "info");
 
-  // Sort processes by burst time (SJF)
   const sortedProcesses = [...state.processes]
     .filter((p) => p.state === "waiting")
     .sort((a, b) => a.burstTime - b.burstTime);
 
   log(`Sorted ${sortedProcesses.length} processes by burst time (SJF)`, "info");
 
-  // Execute each process
   for (const process of sortedProcesses) {
     await executeProcess(process);
     await sleep(500);
@@ -143,7 +120,6 @@ async function runSimulation() {
 async function executeProcess(process) {
   log(`Executing process ${process.id}...`, "info");
 
-  // Check if enough memory
   const freeFrames = state.frames.filter((f) => !f.occupied).length;
   if (freeFrames < process.size) {
     log(
@@ -155,14 +131,12 @@ async function executeProcess(process) {
     return;
   }
 
-  // Allocate frames (first-fit)
   const allocated = allocateFrames(process.id, process.size);
   if (!allocated) {
     log(`Failed to allocate memory for ${process.id}`, "error");
     return;
   }
 
-  // Update process state
   process.state = "running";
   renderProcessQueue();
   renderFrameTable();
@@ -170,13 +144,11 @@ async function executeProcess(process) {
 
   log(`Process ${process.id} allocated ${process.size} frames`, "success");
 
-  // Simulate execution (burst time)
   for (let i = 0; i < process.burstTime; i++) {
     await sleep(200);
     log(`${process.id} executing... (${i + 1}/${process.burstTime})`, "info");
   }
 
-  // Deallocate frames
   deallocateFrames(process.id);
   process.state = "completed";
 
@@ -196,13 +168,7 @@ function allocateFrames(processId, pages) {
     if (!state.frames[i].occupied) {
       state.frames[i].occupied = true;
       state.frames[i].processId = processId;
-
-      pageTable.push({
-        pageNumber: allocated,
-        frameNumber: i,
-        validBit: true,
-      });
-
+      pageTable.push({ pageNumber: allocated, frameNumber: i, validBit: true });
       allocated++;
     }
   }
@@ -212,7 +178,6 @@ function allocateFrames(processId, pages) {
     return true;
   }
 
-  // Rollback if not enough frames
   for (const entry of pageTable) {
     state.frames[entry.frameNumber].occupied = false;
     state.frames[entry.frameNumber].processId = null;
@@ -229,7 +194,6 @@ function deallocateFrames(processId) {
       frame.processId = null;
     }
   }
-
   delete state.pageTables[processId];
 }
 
@@ -259,37 +223,30 @@ function renderProcessQueue() {
 
   if (state.processes.length === 0) {
     container.innerHTML =
-      '<p class="text-gray-400 text-center py-8">No processes added yet</p>';
+      '<div class="text-center py-8 text-gray-400 text-xs">No processes added yet</div>';
     return;
   }
 
-  const stateColors = {
-    waiting: "bg-yellow-50 border-yellow-200",
-    running: "bg-green-50 border-green-200",
-    completed: "bg-gray-50 border-gray-200",
-  };
-
-  const stateBadgeColors = {
-    waiting: "bg-yellow-100 text-yellow-800",
-    running: "bg-green-100 text-green-800",
-    completed: "bg-gray-100 text-gray-800",
+  const stateColor = {
+    waiting: "text-amber-600 bg-amber-50",
+    running: "text-emerald-600 bg-emerald-50",
+    completed: "text-gray-500 bg-gray-50",
   };
 
   container.innerHTML = state.processes
     .map(
       (p) => `
-        <div class="border ${
-          stateColors[p.state]
-        } rounded-md p-4 transition-all">
-            <div class="flex justify-between items-center mb-2">
-                <span class="font-semibold text-gray-900">${p.id}</span>
-                <span class="px-2 py-1 rounded text-xs font-medium ${
-                  stateBadgeColors[p.state]
-                }">${p.state.toUpperCase()}</span>
-            </div>
-            <div class="flex gap-4 text-sm text-gray-600">
-                <span>Size: ${p.size} pages</span>
-                <span>Burst: ${p.burstTime}</span>
+        <div class="border border-gray-200 rounded p-3 ${stateColor[p.state]}">
+            <div class="flex justify-between items-center">
+                <div>
+                    <div class="text-sm">${p.id}</div>
+                    <div class="text-xs opacity-60 mt-1">
+                        ${p.size} pages · ${p.burstTime} burst
+                    </div>
+                </div>
+                <span class="text-xs px-2 py-1 rounded border border-current opacity-60">${
+                  p.state
+                }</span>
             </div>
         </div>
     `
@@ -302,7 +259,7 @@ function renderFrameTable() {
 
   if (!state.memoryConfigured) {
     container.innerHTML =
-      '<p class="text-gray-400 text-center py-8 col-span-8">Configure memory first</p>';
+      '<div class="col-span-8 text-center py-8 text-gray-400 text-xs">Configure memory first</div>';
     return;
   }
 
@@ -311,11 +268,13 @@ function renderFrameTable() {
       (f) => `
         <div class="aspect-square border ${
           f.occupied
-            ? "bg-blue-600 border-blue-700 text-white"
-            : "bg-white border-gray-300 text-gray-400"
-        } rounded-md flex flex-col items-center justify-center text-sm transition-all hover:scale-105">
-            <div class="font-semibold">F${f.frameId}</div>
-            <div class="text-xs mt-1">${f.occupied ? f.processId : "Free"}</div>
+            ? "border-gray-900 bg-gray-900 text-white"
+            : "border-gray-200 bg-white text-gray-400"
+        } rounded flex flex-col items-center justify-center text-xs">
+            <div>F${f.frameId}</div>
+            <div class="text-[10px] mt-0.5">${
+              f.occupied ? f.processId : "—"
+            }</div>
         </div>
     `
     )
@@ -324,12 +283,11 @@ function renderFrameTable() {
 
 function renderPageTables() {
   const container = document.getElementById("pageTables");
-
   const processesWithTables = Object.keys(state.pageTables);
 
   if (processesWithTables.length === 0) {
     container.innerHTML =
-      '<p class="text-gray-400 text-center py-8">No active page tables</p>';
+      '<div class="text-center py-8 text-gray-400 text-xs">No active page tables</div>';
     return;
   }
 
@@ -337,25 +295,35 @@ function renderPageTables() {
     .map((processId) => {
       const pageTable = state.pageTables[processId];
       return `
-            <div class="border border-gray-200 rounded-md overflow-hidden">
-                <div class="bg-gray-100 px-4 py-2 font-semibold text-gray-900">${processId}</div>
-                <div class="divide-y divide-gray-200">
-                    <div class="grid grid-cols-3 gap-4 px-4 py-2 bg-gray-50 text-sm font-medium text-gray-700">
-                        <div>Page #</div>
-                        <div>Frame #</div>
-                        <div>Valid</div>
-                    </div>
-                    ${pageTable
-                      .map(
-                        (entry) => `
-                        <div class="grid grid-cols-3 gap-4 px-4 py-2 text-sm text-gray-600">
-                            <div>${entry.pageNumber}</div>
-                            <div>${entry.frameNumber}</div>
-                            <div>${entry.validBit ? "✓" : "✗"}</div>
-                        </div>
-                    `
-                      )
-                      .join("")}
+            <div class="border border-gray-200 rounded overflow-hidden">
+                <div class="bg-gray-50 px-4 py-2 text-sm text-gray-700">${processId}</div>
+                <div class="overflow-x-auto">
+                    <table class="table table-sm w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-xs text-gray-500 font-normal">Page</th>
+                                <th class="text-xs text-gray-500 font-normal">Frame</th>
+                                <th class="text-xs text-gray-500 font-normal">Valid</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pageTable
+                              .map(
+                                (entry) => `
+                                <tr class="border-b border-gray-100">
+                                    <td class="text-xs">${entry.pageNumber}</td>
+                                    <td class="text-xs">${
+                                      entry.frameNumber
+                                    }</td>
+                                    <td class="text-xs">${
+                                      entry.validBit ? "✓" : "—"
+                                    }</td>
+                                </tr>
+                            `
+                              )
+                              .join("")}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         `;
@@ -368,16 +336,16 @@ function log(message, type = "info") {
   const container = document.getElementById("simulationLog");
   const timestamp = new Date().toLocaleTimeString();
 
-  const typeColors = {
-    info: "text-blue-700 bg-blue-50",
-    success: "text-green-700 bg-green-50",
-    warning: "text-yellow-700 bg-yellow-50",
-    error: "text-red-700 bg-red-50",
+  const typeColor = {
+    info: "text-blue-700 bg-blue-50 border-blue-200",
+    success: "text-emerald-700 bg-emerald-50 border-emerald-200",
+    warning: "text-amber-700 bg-amber-50 border-amber-200",
+    error: "text-rose-700 bg-rose-50 border-rose-200",
   };
 
   const entry = document.createElement("div");
-  entry.className = `px-3 py-1.5 rounded ${typeColors[type]}`;
-  entry.innerHTML = `<span class="font-semibold">[${timestamp}]</span> ${message}`;
+  entry.className = `border ${typeColor[type]} rounded px-3 py-1.5 text-xs`;
+  entry.innerHTML = `<span class="opacity-60">${timestamp}</span> ${message}`;
 
   container.appendChild(entry);
   container.scrollTop = container.scrollHeight;
@@ -386,17 +354,17 @@ function log(message, type = "info") {
 function showStatus(elementId, message, type) {
   const element = document.getElementById(elementId);
 
-  const typeColors = {
-    success: "text-green-700 bg-green-50 border border-green-200",
-    error: "text-red-700 bg-red-50 border border-red-200",
+  const typeColor = {
+    success: "text-emerald-700 bg-emerald-50 border-emerald-200",
+    error: "text-rose-700 bg-rose-50 border-rose-200",
   };
 
-  element.textContent = message;
-  element.className = `text-sm px-3 py-2 rounded ${typeColors[type]}`;
+  element.innerHTML = `<span>${message}</span>`;
+  element.className = `border ${typeColor[type]} rounded px-3 py-2 text-xs`;
 
   setTimeout(() => {
-    element.textContent = "";
-    element.className = "text-sm";
+    element.innerHTML = "";
+    element.className = "";
   }, 3000);
 }
 

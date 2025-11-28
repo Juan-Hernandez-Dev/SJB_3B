@@ -37,6 +37,37 @@
       .badge {
         font-weight: 400;
       }
+
+      /* Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      .animate-slide-in {
+        animation: slideIn 0.2s ease-out;
+      }
     </style>
   </head>
   <body class="min-h-screen bg-gray-50">
@@ -209,6 +240,9 @@
       </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Backend Logic -->
+    <script src="simulator.js"></script>
+    <!-- UI & Rendering -->
+    <script src="ui.js"></script>
   </body>
 </html>

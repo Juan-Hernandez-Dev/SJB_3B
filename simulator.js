@@ -178,8 +178,10 @@ async function executeProcess(process) {
   addLog(`Process ${process.id} allocated ${process.size} frames`, "success");
 
   // Simulate execution (burst time)
+  const executionSpeed =
+    parseInt(document.getElementById("executionSpeed").value) || 200;
   for (let i = 0; i < process.burstTime; i++) {
-    await sleep(200);
+    await sleep(executionSpeed);
     addLog(
       `${process.id} executing... (${i + 1}/${process.burstTime})`,
       "info"
